@@ -11,3 +11,10 @@ node_modules/
 
 # Claude Code local settings (per-user skill overrides etc.)
 .claude/settings.local.json
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+.beads/proxieddb/
+*.gate.lock*
