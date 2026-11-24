@@ -8,7 +8,7 @@ description: >-
   conversation touches database structure with more than ~3 tables.
 license: MIT
 metadata:
-  version: "1.5.0"
+  version: "1.6.0"
 ---
 
 # HTML ERD & Schema Explorer

@@ -43,7 +43,7 @@ Eight skills produce artifacts the user submits back: `html-throwaway-editor`, `
 | **Server** (default in local Claude Code) | Agent invokes the `html-skills-listen` skill from each content skill's pre-flight block — it returns a per-session URL like `http://127.0.0.1:<ephemeral-port>/?t=<session-handshake>`. The agent injects `window.__CLAUDE_SUBMIT_URL__ = '<that URL>'` into each artifact at generation time, exactly as returned — the `?t=` value is how the receiver rejects forged POSTs; never strip the query string. Submit POSTs JSON there; agent gets a `Monitor` notification — no copy-paste. | Agent is in a local Claude Code session with shell access. Almost always you when there's a real terminal. |
 | **Clipboard** (fallback) | None. Artifact inlines `assets/submit-handler.js` and calls `submitToClaude(payload)`. Submit copies JSON; user pastes back. | `html-skills-listen` reported it can't run (cloud / web / sandboxed harness), or the harness has no `Monitor`-equivalent. Always works, but every submit costs the user a paste. |
 
-The decision rule for agents is one line: *before writing each artifact*, invoke the `html-skills-listen` skill (it's idempotent). It self-detects cloud/web/sandboxed environments and short-circuits when server mode can't reach the browser, so it's always safe to run. If it reports active, use server mode for every artifact this session. If it short-circuited, drop to clipboard. Server mode falls through to clipboard if a POST fails for any reason, and the toast says the listener didn't answer, so the user is never stuck or misled.
+The decision rule for agents is one line: *before writing each artifact*, invoke the `html-skills-listen` skill (it's idempotent). It self-detects cloud/web/sandboxed environments and short-circuits when server mode can't reach the browser, so it's always safe to run. If it reports active, use server mode for every artifact this session. If it short-circuited, drop to clipboard. Server mode falls through to clipboard if a POST fails for any reason, and the toast names why it wasn't sent (the browser console has details), so the user is never stuck or misled.
 
 If the receiver dies (a tab closed mid-POST used to crash it — fixed in 1.3.0), the next pre-flight restarts it with the same handshake value and, when free, the same port, so earlier artifacts keep working; if the port had to change, the agent tells the user.
 
@@ -79,10 +79,26 @@ Or by hand:
 node $CLAUDE_PLUGIN_ROOT/skills/html-skills-listen/server.js > /tmp/html-skills-submits.log 2>&1 &
 echo $! > /tmp/html-skills-submits.pid
 sleep 0.3
-grep -oE 'listening on http://127\.0\.0\.1:[0-9]+/\?t=[^[:space:]]+' /tmp/html-skills-submits.log | tail -1 | sed 's/listening on //'
+grep -oE '^\[html-skills-channel\] listening on http://127\.0\.0\.1:[0-9]+/\?t=[^[:space:]]+' /tmp/html-skills-submits.log | tail -1 | sed 's/^.* listening on //'
 ```
 
 The server defaults to an ephemeral port; the `grep` extracts the whole URL — keep the `?t=` query string, the receiver rejects POSTs without it. Arm your live-tail equivalent on the log, filtering for `"method":"notifications/claude/channel"`. Inject `window.__CLAUDE_SUBMIT_URL__ = '<the URL grep printed>'` into the artifact. (Pin a specific port by exporting `HTML_SKILLS_CHANNEL_PORT=8788` before launching, if you prefer.)
+
+### When a Submit never arrives
+
+The receiver writes one diagnostic line per request to the same log, never matching the
+`Monitor` filter: `[html-skills-channel] request <METHOD> <path> origin=… host=… -> <status> <reason>`
+(no query string, no body). Read the log after a failed Submit:
+
+| Log shows | Meaning |
+|---|---|
+| nothing after `listening on` | The browser never sent the request: it was blocked before the network (a declined Chrome/Firefox *Local Network Access* prompt, an embedding frame without loopback permission), or the page is open on a different device than the receiver (`127.0.0.1` is that device). |
+| `request OPTIONS … -> 204 preflight` with no POST after it | The browser received the preflight answer and still refused the POST — check the console for a CORS or Local Network Access message. |
+| `request POST … -> 403 invalid handshake` / `missing handshake` | The artifact carries a stale or stripped submit URL (e.g. generated before a receiver restart on a new port). Regenerate it. |
+| `request POST … -> 200 forwarded …` with no notification | The receiver delivered; the `Monitor` is not armed on this log (check the session id `listen.sh` printed as `SID` / `SID_SOURCE`). |
+
+The page's toast names the failure ("Not sent to Claude (…) — copied to the clipboard instead") and
+`console.warn` logs it.
 
 ### Standardised payload envelope
 

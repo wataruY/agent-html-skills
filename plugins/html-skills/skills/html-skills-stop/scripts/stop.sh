@@ -5,7 +5,8 @@
 # not a shell concept): this script prints the id, the SKILL.md does the call.
 #
 # Usage: stop.sh [session-id]
-#   Falls back to $CLAUDE_CODE_SESSION_ID, then "no-session" — same as listen.sh.
+#   An empty argument falls back to $CLAUDE_CODE_SESSION_ID, then $BB_THREAD_ID
+#   (as "bb-<id>"), then "no-session". Keep this resolution identical to listen.sh's.
 #
 # Output: KEY=VALUE lines.
 #   STATUS=WEB         — nothing was running here; web session.
@@ -15,7 +16,17 @@
 
 set -u
 
-SID="${1:-${CLAUDE_CODE_SESSION_ID:-no-session}}"
+# Same resolution and sanitising as listen.sh — keep the two in sync.
+if [ -n "${1:-}" ]; then
+  SID="$1"
+elif [ -n "${CLAUDE_CODE_SESSION_ID:-}" ]; then
+  SID="$CLAUDE_CODE_SESSION_ID"
+elif [ -n "${BB_THREAD_ID:-}" ]; then
+  SID="bb-$BB_THREAD_ID"
+else
+  SID=no-session
+fi
+SID=$(printf '%s' "$SID" | tr -c 'A-Za-z0-9._-' '_')
 PIDF=/tmp/html-skills-$SID.pid
 LOGF=/tmp/html-skills-$SID.log
 URLF=/tmp/html-skills-$SID.url

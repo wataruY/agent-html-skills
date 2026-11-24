@@ -11,8 +11,12 @@
 //                           browser (local Claude Code).
 //       2. Clipboard mode — default. submit copies JSON; user pastes back.
 //     If server mode was configured but the POST fails (listener died, port
-//     changed, 403), the handler falls back to clipboard AND says so in the
-//     toast, so a dead listener is visible instead of silent.
+//     changed, 403, or the browser blocked the request — e.g. a declined
+//     Local Network Access prompt, or a viewer that can't reach this machine's
+//     127.0.0.1), the handler falls back to clipboard AND says so: a longer
+//     toast (or the manual-copy banner) names the reason, and console.warn
+//     logs the details, so a failed delivery is visible instead of silent.
+//     A "Sending to Claude…" toast shows while the POST is in flight.
 //
 //   copyToClipboard(text, opts) — generic clipboard helper. Use this for
 //     ANY clipboard write in an artifact (e.g. a "copy CSS" or "copy URL"
@@ -104,21 +108,35 @@
     let serverFailure = '';
 
     if (url) {
+      const pending = typeof opts.onResult === 'function'
+        ? null : toast('Sending to Claude…', 0);
       try {
         const r = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: compact(json),
         });
+        if (pending) pending.remove();
         if (r.ok) {
           notify(opts, (opts.serverMessage
             || window.__CLAUDE_SERVER_MESSAGE__
             || 'Submitted to Claude.') + note);
           return 'server';
         }
-        serverFailure = 'HTTP ' + r.status;
+        serverFailure = 'HTTP ' + r.status
+          + (r.status === 403 ? ', listener rejected this page' : '');
       } catch (e) {
-        serverFailure = 'unreachable';
+        if (pending) pending.remove();
+        // fetch rejects with a bare TypeError for every network-level failure:
+        // nothing listening, a browser permission block (Local Network Access),
+        // CORS, or a viewer on another device. The console names the cause.
+        serverFailure = 'request blocked or no listener';
+      }
+      if (typeof console !== 'undefined' && console.warn) {
+        console.warn('[html-skills] Submit to Claude failed (' + serverFailure
+          + '); falling back to clipboard. Check the console/Network tab for a '
+          + '"Local Network Access" or CORS message, and that this page is open on '
+          + 'the machine running Claude Code.');
       }
     }
     return clipboardSubmit(json, opts, note, serverFailure);
@@ -126,16 +144,24 @@
 
   async function clipboardSubmit(json, opts, note, serverFailure) {
     let msg;
+    let fallbackHead = '';
     if (serverFailure) {
+      fallbackHead = 'Not sent to Claude (' + serverFailure + '). ';
       msg = opts.fallbackMessage
         || window.__CLAUDE_FALLBACK_MESSAGE__
-        || ("Claude's listener didn't answer (" + serverFailure + ") — copied to clipboard instead. Paste it into Claude.");
+        || ('Not sent to Claude (' + serverFailure + ') — copied to the clipboard instead. Paste it into Claude.');
     } else {
       msg = opts.clipboardMessage
         || window.__CLAUDE_CLIPBOARD_MESSAGE__
         || 'Copied to clipboard — paste back into Claude.';
     }
-    return copyToClipboard(json, { ...opts, message: msg + (note || ''), returnTag: 'clipboard' });
+    return copyToClipboard(json, {
+      ...opts,
+      message: msg + (note || ''),
+      returnTag: 'clipboard',
+      duration: serverFailure ? 9000 : undefined,
+      bannerLead: fallbackHead,
+    });
   }
 
   // Standalone clipboard helper, exposed on window. Use this for ANY
@@ -154,7 +180,7 @@
       notify(opts, msg);
       return opts.returnTag || 'copied';
     }
-    showInlineFallback(text);
+    showInlineFallback(text, opts.bannerLead || '');
     return 'manual';
   }
 
@@ -184,6 +210,11 @@
 
   function notify(opts, msg) {
     if (typeof opts.onResult === 'function') { opts.onResult(msg); return; }
+    toast(msg, opts.duration || 3500);
+  }
+
+  // durationMs 0 = stays until the caller removes it.
+  function toast(msg, durationMs) {
     const el = document.createElement('div');
     el.textContent = msg;
     el.setAttribute('role', 'status');
@@ -194,14 +225,15 @@
       zIndex: 99999, boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
     });
     document.body.appendChild(el);
-    setTimeout(() => el.remove(), 3500);
+    if (durationMs) setTimeout(() => el.remove(), durationMs);
+    return el;
   }
 
   // Absolute last resort: both clipboard paths failed. Drop a small
   // non-blocking banner pinned to the bottom of the page with the JSON
   // pre-selected and a one-line instruction. NEVER a modal — the rest of
   // the page stays interactive.
-  function showInlineFallback(json) {
+  function showInlineFallback(json, lead) {
     const wrap = document.createElement('div');
     wrap.setAttribute('role', 'region');
     wrap.setAttribute('aria-label', 'Manual copy required');
@@ -221,7 +253,7 @@
     const main = document.createElement('div');
     const msg = document.createElement('div');
     const isApple = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || '');
-    msg.textContent = 'Auto-copy unavailable here. Press '
+    msg.textContent = lead + 'Auto-copy unavailable here. Press '
       + (isApple ? '⌘A then ⌘C' : 'Ctrl+A then Ctrl+C')
       + ' in the box, then paste into Claude.';
     msg.style.marginBottom = '6px';

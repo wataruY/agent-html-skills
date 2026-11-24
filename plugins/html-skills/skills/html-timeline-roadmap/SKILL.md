@@ -8,7 +8,7 @@ description: >-
   explanation has a clear time axis, even if the user doesn't say "timeline".
 license: MIT
 metadata:
-  version: "1.5.0"
+  version: "1.6.0"
 ---
 
 # HTML Timeline & Roadmap Views

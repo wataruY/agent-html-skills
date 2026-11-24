@@ -8,7 +8,7 @@ description: >-
   shared with reviewers or fed back to the agent for implementation.
 license: MIT
 metadata:
-  version: "1.5.0"
+  version: "1.6.0"
 ---
 
 # HTML Spec, Planning & Exploration

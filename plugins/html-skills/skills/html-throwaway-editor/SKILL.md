@@ -10,7 +10,7 @@ description: >-
   to references; the artifact and submit payload carry key names and masked previews only.
 license: MIT
 metadata:
-  version: "1.5.0"
+  version: "1.6.0"
 ---
 
 # HTML Throwaway Editor

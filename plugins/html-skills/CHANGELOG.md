@@ -3,6 +3,35 @@
 All notable changes to the `html-skills` plugin are documented here.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.6.0] — 2026-11-24
+
+### Fixed
+
+- **A Submit that never reaches the receiver is now diagnosable.** `server.js` logs one
+  stderr line per request — preflight, rejection (403 bad host / missing or invalid
+  handshake, 405, 413), and forwarded — as
+  `[html-skills-channel] request <METHOD> <path> origin=… host=… -> <status> <reason>`.
+  The query string (handshake) and body are never logged, header values are reduced to a
+  safe character set, and the lines never match the `Monitor` filter, so they don't wake the
+  agent. "No lines", "preflight but no POST" and "403" now point at different causes (see the
+  README's *When a Submit never arrives*).
+- **Preflights answer Chrome's Private Network Access opt-in** (`Access-Control-Allow-Private-Network: true`
+  when requested); the handshake still gates the POST.
+- **`listen.sh` reports where the session id came from.** An empty argument (the
+  `${CLAUDE_SESSION_ID}` substitution didn't happen, as seen under bb) falls back to
+  `$CLAUDE_CODE_SESSION_ID`, then `$BB_THREAD_ID`; `SID_SOURCE=` says which, and
+  `SID_SOURCE=none` adds a `WARN=` line because id-less sessions share one receiver;
+  `stop.sh` resolves an empty argument the same way, so teardown finds that receiver. The
+  listening-line grep is anchored, so a logged header can never be taken for the URL.
+- **`submit-handler.js` says clearly when it fell back to the clipboard.** A "Sending to
+  Claude…" toast shows during the POST; on failure the toast (now 9 s) or the manual-copy
+  banner leads with "Not sent to Claude (<reason>)", distinguishing a 403 from a request the
+  browser blocked or nobody answered, and `console.warn` points at Local Network Access /
+  CORS messages.
+- **`scripts/receiver-selftest.sh`** covers the new log lines (no handshake leak, no
+  Monitor-filter match, crafted Origin can't forge lines), the PNA preflight, and the
+  session-id fallbacks.
+
 ## [1.5.0] — 2026-11-24
 
 ### Added

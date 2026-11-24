@@ -20,6 +20,14 @@
  *     anything is forwarded, so other pages or local processes can't inject into
  *     the session. Bodies are capped at 256KB. Forwarded content is untrusted user
  *     data; the consuming agent treats it strictly as data, never as instructions.
+ *   - Diagnostics: every request — preflight, rejected, or forwarded — gets one
+ *     stderr line `[html-skills-channel] request <METHOD> <path> origin=… host=…
+ *     -> <status> <reason>`. The query string (which carries the handshake) and the
+ *     body are never logged, and header values are reduced to a safe character set
+ *     so a crafted Origin can't forge a `listening on` line or a submission line.
+ *     The lines go to the same log but never match the Monitor filter, so a Submit
+ *     that was rejected (or a preflight with no POST behind it) is visible on
+ *     inspection without waking the agent.
  *   - Robustness: a client that disconnects mid-request must never take the
  *     receiver down (an artifact tab closed during Submit is normal), so request
  *     errors are caught and logged, and unhandled errors are logged, not fatal.
@@ -57,6 +65,19 @@ function log(s) {
   process.stderr.write(`[html-skills-channel] ${s}\n`);
 }
 
+// Header values are attacker-controlled: keep a conservative character set and a
+// bounded length, so a log line can never contain `"`, spaces, or newlines.
+function safe(v) {
+  if (v === undefined || v === null || v === '') return '-';
+  return String(v).slice(0, 120).replace(/[^A-Za-z0-9._:\/\[\]-]/g, '?');
+}
+
+function logRequest(req, status, reason) {
+  const path = (req.url || '').split('?')[0];
+  log(`request ${safe(req.method)} ${safe(path)} origin=${safe(req.headers.origin)} `
+    + `host=${safe(req.headers.host)} -> ${status} ${reason}`);
+}
+
 function notify(method, params) {
   process.stdout.write(JSON.stringify({ jsonrpc: '2.0', method, params }) + '\n');
 }
@@ -74,17 +95,25 @@ function reply(res, status, body) {
 
 async function handle(req, res) {
   // Preflight carries no body and no handshake; the POST itself is what's gated.
+  // Chrome's Private Network Access preflight asks for explicit opt-in; answer it
+  // (the handshake still gates the POST). Logged so "preflight arrived, POST never
+  // followed" is distinguishable from "nothing arrived at all".
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, {
+    const headers = {
       ...CORS,
       'Access-Control-Allow-Headers': 'Content-Type, X-HTML-Skills-Token',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    });
+    };
+    const pna = req.headers['access-control-request-private-network'] === 'true';
+    if (pna) headers['Access-Control-Allow-Private-Network'] = 'true';
+    res.writeHead(204, headers);
     res.end();
+    logRequest(req, 204, pna ? 'preflight (private-network)' : 'preflight');
     return;
   }
 
   if (req.method !== 'POST') {
+    logRequest(req, 405, 'method not allowed');
     res.writeHead(405, { 'Content-Type': 'text/plain' });
     res.end('html-skills channel: POST a JSON body to deliver into Claude\n');
     return;
@@ -93,6 +122,7 @@ async function handle(req, res) {
   // Cheap DNS-rebinding hardening; the handshake check below is the real gate.
   const hostName = (req.headers.host || '').replace(/:\d+$/, '');
   if (hostName !== '127.0.0.1' && hostName !== 'localhost') {
+    logRequest(req, 403, 'bad host');
     reply(res, 403, { ok: false, error: 'bad host' });
     return;
   }
@@ -106,6 +136,7 @@ async function handle(req, res) {
   }
   if (!presented) presented = req.headers['x-html-skills-token'] || null;
   if (!tokenMatches(presented)) {
+    logRequest(req, 403, presented ? 'invalid handshake' : 'missing handshake');
     reply(res, 403, { ok: false, error: 'missing or invalid channel token' });
     return;
   }
@@ -115,6 +146,7 @@ async function handle(req, res) {
   for await (const chunk of req) {
     size += chunk.length;
     if (size > MAX_BODY_BYTES) {
+      logRequest(req, 413, 'body too large');
       reply(res, 413, { ok: false, error: 'body too large' });
       return;
     }
@@ -138,6 +170,7 @@ async function handle(req, res) {
 
   notify('notifications/claude/channel', { content: body, meta });
   reply(res, 200, { ok: true });
+  logRequest(req, 200, `forwarded skill=${safe(meta.skill)} kind=${safe(meta.kind)} bytes=${size}`);
 }
 
 const httpServer = http.createServer((req, res) => {

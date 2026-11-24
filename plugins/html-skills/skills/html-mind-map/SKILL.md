@@ -9,7 +9,7 @@ description: >-
   "map out", "explore", or "what if".
 license: MIT
 metadata:
-  version: "1.5.0"
+  version: "1.6.0"
 ---
 
 # HTML Mind Map & Concept Map

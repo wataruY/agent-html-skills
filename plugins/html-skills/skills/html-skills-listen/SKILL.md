@@ -9,7 +9,7 @@ description: >-
 license: MIT
 user-invocable: false
 metadata:
-  version: "1.5.0"
+  version: "1.6.0"
 ---
 
 # html-skills-listen — server-mode setup for html-skills artifacts
@@ -24,7 +24,7 @@ System primitive for the html-skills plugin. It runs a bundled script that detec
    bash "${CLAUDE_PLUGIN_ROOT}/skills/html-skills-listen/scripts/listen.sh" "${CLAUDE_SESSION_ID}"
    ```
 
-   Output is `KEY=VALUE` lines. Always present: `SID`, `LOG`, `MIDF`, `STATUS`. With `STATUS=STARTED` or `STATUS=ALREADY_RUNNING` you also get `URL`. After a restart of a receiver that had died, `STATUS=STARTED` also prints `RESTARTED=1` and, if its previous port could not be reused, `PORT_CHANGED=1`.
+   Output is `KEY=VALUE` lines. Always present: `SID`, `SID_SOURCE`, `LOG`, `MIDF`, `STATUS`. If the session id above arrives empty, the script falls back to `$CLAUDE_CODE_SESSION_ID`, then `$BB_THREAD_ID` (`SID_SOURCE` names which); `SID_SOURCE=none` comes with a `WARN=` line — pass it on to the user, since sessions without an id share one receiver. With `STATUS=STARTED` or `STATUS=ALREADY_RUNNING` you also get `URL`. After a restart of a receiver that had died, `STATUS=STARTED` also prints `RESTARTED=1` and, if its previous port could not be reused, `PORT_CHANGED=1`.
 
 2. **Branch on `STATUS`:**
 
@@ -66,6 +66,10 @@ System primitive for the html-skills plugin. It runs a bundled script that detec
    If invoked directly by a user, confirm **without** echoing the URL:
 
    > ✓ html-skills server active for this session. Submit clicks on html-skills artifacts arrive as notifications. Invoke `html-skills-stop` when done.
+
+## When a Submit doesn't arrive
+
+The receiver logs one line per request to `LOG` (`request <METHOD> <path> … -> <status> <reason>`; never the query string or body, and never matching the `Monitor` filter). Read it with `grep ' request ' <LOG>`: no lines means the browser never sent the request (blocked by a Local Network Access prompt, or the page is open on another device); a `preflight` line with no POST means the browser refused after the preflight; `403` means the artifact's submit URL is stale — regenerate it.
 
 ## Handling submissions (security)
 

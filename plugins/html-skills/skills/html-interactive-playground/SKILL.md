@@ -9,7 +9,7 @@ description: >-
   values, easing curves, threshold values, layout dimensions, anything tunable.
 license: MIT
 metadata:
-  version: "1.5.0"
+  version: "1.6.0"
 ---
 
 # HTML Interactive Playground

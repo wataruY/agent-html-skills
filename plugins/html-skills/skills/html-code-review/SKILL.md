@@ -9,7 +9,7 @@ description: >-
   explainer to every non-trivial PR.
 license: MIT
 metadata:
-  version: "1.5.0"
+  version: "1.6.0"
 ---
 
 # HTML Code Review & Understanding

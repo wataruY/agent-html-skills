@@ -4,8 +4,11 @@
 # LOG path, (3) save the Monitor task id.
 #
 # Usage: listen.sh [session-id]
-#   The session id comes from Claude Code's ${CLAUDE_SESSION_ID} substitution;
-#   falls back to $CLAUDE_CODE_SESSION_ID, then "no-session".
+#   The session id comes from Claude Code's ${CLAUDE_SESSION_ID} substitution.
+#   When that arrives empty (the substitution didn't happen, as seen under bb), it
+#   falls back to $CLAUDE_CODE_SESSION_ID, then $BB_THREAD_ID, then "no-session".
+#   SID_SOURCE says which one won; "no-session" also prints a WARN line, because
+#   every session without an id shares the same receiver and /tmp files.
 #
 # Idempotent. Safe to call every time a content skill fires.
 #
@@ -28,13 +31,28 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILL_DIR="$(dirname "$SCRIPT_DIR")"
 SERVER_JS="$SKILL_DIR/server.js"
 
-SID="${1:-${CLAUDE_CODE_SESSION_ID:-no-session}}"
+# Keep this resolution identical to html-skills-stop/scripts/stop.sh.
+if [ -n "${1:-}" ]; then
+  SID="$1"; SID_SOURCE=arg
+elif [ -n "${CLAUDE_CODE_SESSION_ID:-}" ]; then
+  SID="$CLAUDE_CODE_SESSION_ID"; SID_SOURCE=CLAUDE_CODE_SESSION_ID
+elif [ -n "${BB_THREAD_ID:-}" ]; then
+  SID="bb-$BB_THREAD_ID"; SID_SOURCE=BB_THREAD_ID
+else
+  SID=no-session; SID_SOURCE=none
+fi
+# The id becomes part of /tmp paths; keep it to a safe character set.
+SID=$(printf '%s' "$SID" | tr -c 'A-Za-z0-9._-' '_')
 PIDF=/tmp/html-skills-$SID.pid
 LOGF=/tmp/html-skills-$SID.log
 URLF=/tmp/html-skills-$SID.url
 MIDF=/tmp/html-skills-$SID.monitor-id
 
 echo "SID=$SID"
+echo "SID_SOURCE=$SID_SOURCE"
+if [ "$SID_SOURCE" = none ]; then
+  echo "WARN=no-session-id (no argument, CLAUDE_CODE_SESSION_ID or BB_THREAD_ID; sessions without an id share one receiver, so submits may reach another session's Monitor)"
+fi
 echo "LOG=$LOGF"
 echo "MIDF=$MIDF"
 
@@ -99,7 +117,7 @@ echo $! > "$PIDF"
 PID=$(cat "$PIDF")
 i=0
 while [ "$i" -lt 30 ]; do
-  grep -q 'listening on http://127\.0\.0\.1:' "$LOGF" 2>/dev/null && break
+  grep -q '^\[html-skills-channel\] listening on http://127\.0\.0\.1:' "$LOGF" 2>/dev/null && break
   kill -0 "$PID" 2>/dev/null || break
   sleep 0.1
   i=$((i + 1))
@@ -115,8 +133,8 @@ fi
 
 # The URL carries the per-session loopback handshake as its `?t=` query string.
 # Capture it whole; the receiver rejects any POST that doesn't present it.
-URL=$(grep -oE 'listening on http://127\.0\.0\.1:[0-9]+/\?t=[^[:space:]]+' "$LOGF" | tail -1 \
-      | sed 's/listening on //')
+URL=$(grep -oE '^\[html-skills-channel\] listening on http://127\.0\.0\.1:[0-9]+/\?t=[^[:space:]]+' "$LOGF" | tail -1 \
+      | sed 's/^\[html-skills-channel\] listening on //')
 if [ -z "$URL" ]; then
   echo "STATUS=ERROR"
   echo "ERROR=no-listening-line-in-log"

@@ -10,7 +10,7 @@ description: >-
   placeholders unless the user explicitly opts in to embedding them.
 license: MIT
 metadata:
-  version: "1.5.0"
+  version: "1.6.0"
 ---
 
 # HTML Data Explorer

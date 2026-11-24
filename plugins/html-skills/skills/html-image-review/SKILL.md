@@ -11,7 +11,7 @@ description: >-
   (calls `submitToClaude`) so the verdict and marked regions reach Claude Code automatically.
 license: MIT
 metadata:
-  version: "1.5.0"
+  version: "1.6.0"
 ---
 
 # HTML Image Review
