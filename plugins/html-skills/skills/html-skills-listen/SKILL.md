@@ -9,7 +9,7 @@ description: >-
 license: MIT
 user-invocable: false
 metadata:
-  version: "1.4.0"
+  version: "1.5.0"
 ---
 
 # html-skills-listen — server-mode setup for html-skills artifacts

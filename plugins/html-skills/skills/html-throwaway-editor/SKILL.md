@@ -10,7 +10,7 @@ description: >-
   to references; the artifact and submit payload carry key names and masked previews only.
 license: MIT
 metadata:
-  version: "1.4.0"
+  version: "1.5.0"
 ---
 
 # HTML Throwaway Editor
@@ -146,6 +146,7 @@ These defaults apply to every artifact this skill produces. A rule above wins on
 - **Mobile-responsive**: collapse to a single column under ~700px.
 - **Browser storage is for in-progress state only.** `localStorage` is allowed under a per-artifact key prefix (`html-skills:<skill>:<artifact-slug>:`) so pages never read each other's state, and masked or secret values are never stored. Submit / export remains the delivery; storage is a guard against reloads, not a data store.
 - **Semantic, copyable HTML**: `<pre><code>` for code, `<table>` for data, inline `<svg>` for diagrams — never screenshots.
+- **Images stay local.** Embed images as base64 data URIs while the page's total image payload is ≤ ~1.5 MB (the artifact travels as one file); above that, reference local files with relative paths (`src="images/a.png"`) and tell the user to keep the folder together. Never fetch remote images. Data-URI and same-folder images do not taint the canvas, so canvas export (`toDataURL`) keeps working; a cross-origin `<img>` taints it and breaks export.
 - **Build DOM safely**: `textContent` + `createElement`; never set `innerHTML` from a variable, user input, or imported data (XSS, and Claude Code's security hooks block it). Static literal markup is fine.
 - **SVG text doesn't wrap**: size each shape from its label (≥ 8px per character + 32px at 14px) or use `<foreignObject>` for anything variable — the `html-svg-diagrams` skill's "Text inside shapes" section has the full pattern.
 - **Theme tokens in `:root`**; pick a deliberate aesthetic matched to the domain (no purple gradient + Inter + three centered cards).

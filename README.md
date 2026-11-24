@@ -4,11 +4,11 @@
 
 **Two-way HTML artifacts for Claude Code — Claude generates the page, you interact with it in your browser, and the result comes back to Claude automatically. No copy-paste.**
 
-Thariq's article ["Using Claude Code: The Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935) made the case for HTML as a better output surface than long-form markdown — color, layout, type, interactivity, all the things markdown gives up. This plugin runs with that idea and closes the loop: seven of the seventeen content skills produce *interactive* HTML (mind maps, kanban editors, brainstorm grids, comparison matrices, parameter playgrounds, design prototype tuners, testing checklists), and when you click Submit, your structured result is delivered back to Claude as a notification in the same session. You move on without copying anything.
+Thariq's article ["Using Claude Code: The Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935) made the case for HTML as a better output surface than long-form markdown — color, layout, type, interactivity, all the things markdown gives up. This plugin runs with that idea and closes the loop: eight of the eighteen content skills produce *interactive* HTML (mind maps, kanban editors, brainstorm grids, comparison matrices, parameter playgrounds, design prototype tuners, testing checklists, image reviews), and when you click Submit, your structured result is delivered back to Claude as a notification in the same session. You move on without copying anything.
 
 The mechanism is a per-session local listener that the `html-skills-listen` skill arms automatically — every content skill invokes it from its pre-flight block before writing the artifact. If you skip it, or you're on Claude Code on the web, the same Submit button gracefully falls back to copying JSON to your clipboard for paste-back — so the artifacts always work, you just lose the "automatic" part of the round-trip. The other ten skills are non-interactive artifacts (specs, diagrams, dashboards, decks, design tokens, etc.) where there's no result to send back; they just produce the file, with a small "Publish to Claude.ai" button that rides the same channel.
 
-Seventeen content skills, plus two session primitives (`html-skills-listen`, `html-skills-stop`) that the content skills call — 19 skills in the plugin. Each is a single `SKILL.md` with the aesthetic rules and structural guidance baked in, so the output looks deliberate rather than generic-AI.
+Eighteen content skills, plus two session primitives (`html-skills-listen`, `html-skills-stop`) that the content skills call — 20 skills in the plugin. Each is a single `SKILL.md` with the aesthetic rules and structural guidance baked in, so the output looks deliberate rather than generic-AI.
 
 ## Install
 
@@ -46,6 +46,7 @@ npx skills add f-labs-io/agent-html-skills
 | 15 | `html-erd-explorer` | Database schema visualizations |
 | 16 | `html-mind-map` | Branching concept maps that send the tree back |
 | 17 | `html-testing-checklist` | Flow-organized test plans that send pass/fail results back |
+| 18 | `html-image-review` | Image A/B verdicts and region annotation (rect/brush/polygon) sent back as normalized coordinates |
 
 You don't invoke these directly — Claude will reach for the right one when the task fits. Each artifact is written to a `.html` file you open in your browser.
 

@@ -3,6 +3,25 @@
 All notable changes to the `html-skills` plugin are documented here.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] — 2026-11-24
+
+### Added
+
+- **New skill `html-image-review`** — image A/B review pages: labeled side-by-side or a
+  draggable overlay slider with verdict buttons, plus region annotation (rectangle, freehand
+  brush, polygon; click-to-erase, undo/redo). Selections are sent back as normalized 0..1
+  coordinates, so the payload is independent of display size. The eighth interactive skill.
+- **New asset `assets/image-tools.js`** — zero-dependency, `file://`-safe factories inlined
+  next to `submit-handler.js`: `ImageAnnotator.mount(img, opts)` (canvas overlay + toolbar,
+  keyboard shortcuts 1/2/3/4, Ctrl/Cmd+Z) and `ImageCompareSlider(container, { a, b, … })`
+  (draggable, keyboard-navigable comparison divider, `role=slider`). No network, no eval.
+- **Foundation rule: images stay local.** Embed as base64 data URIs under a ~1.5 MB total
+  budget; above that use relative paths and tell the user to keep the folder together; never
+  fetch remote images; data-URI / same-folder images don't taint the canvas so export works.
+- **`scripts/smoke-image-tools.mjs`** — dependency-free Node smoke test for the asset
+  (stubs a minimal DOM, drives a rect/brush/polygon/erase/undo session through the recorded
+  listeners, asserts the normalized export). Run: `node scripts/smoke-image-tools.mjs`.
+
 ## [1.4.0] — 2026-10-04
 
 ### Fixed

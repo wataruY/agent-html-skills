@@ -1,6 +1,6 @@
 # html-skills
 
-Seventeen Claude Code skills for HTML-output patterns — derived from Thariq's article ["Using Claude Code: The Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935) — plus two session primitives (`html-skills-listen`, `html-skills-stop`) that send results from the page back to Claude.
+Eighteen Claude Code skills for HTML-output patterns — derived from Thariq's article ["Using Claude Code: The Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935) — plus two session primitives (`html-skills-listen`, `html-skills-stop`) that send results from the page back to Claude.
 
 ## What's in here
 
@@ -23,6 +23,7 @@ Seventeen Claude Code skills for HTML-output patterns — derived from Thariq's 
 | 15 | `html-erd-explorer` | Database schema visualizations |
 | 16 | `html-mind-map` | Branching concept maps that send the tree back |
 | 17 | `html-testing-checklist` | Flow-organized testing checklists that send pass/fail results back |
+| 18 | `html-image-review` | Image A/B verdicts and region annotation sent back as normalized coordinates |
 
 ## Design notes
 
@@ -33,7 +34,7 @@ Seventeen Claude Code skills for HTML-output patterns — derived from Thariq's 
 
 ## Submit pipeline for interactive artifacts
 
-Seven skills produce artifacts the user submits back: `html-throwaway-editor`, `html-mind-map`, `html-brainstorm-grid`, `html-comparison-matrix`, `html-interactive-playground`, `html-design-prototypes`, `html-testing-checklist`. Each of those `SKILL.md` files ends with a `## Submit pipeline (server or clipboard)` block describing the contract. Every content skill runs the same pre-flight, because the "Publish to Claude.ai" button (below) uses the same channel.
+Eight skills produce artifacts the user submits back: `html-throwaway-editor`, `html-mind-map`, `html-brainstorm-grid`, `html-comparison-matrix`, `html-interactive-playground`, `html-design-prototypes`, `html-testing-checklist`, `html-image-review`. Each of those `SKILL.md` files ends with a `## Submit pipeline (server or clipboard)` block describing the contract. Every content skill runs the same pre-flight, because the "Publish to Claude.ai" button (below) uses the same channel.
 
 ### Two modes
 

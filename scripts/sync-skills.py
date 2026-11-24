@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Keep the html-skills SKILL.md files in sync with the plugin release.
 
-Two things are repeated across the 19 skills and must never drift:
+Two things are repeated across the 20 skills and must never drift:
 
   1. `metadata.version` in every SKILL.md frontmatter equals the plugin version in
      plugins/html-skills/.claude-plugin/plugin.json (the single source of truth that
@@ -240,7 +240,7 @@ def write(version):
     changed = []
     for path in skill_files():
         text, fm_text, match = split(path)
-        if fm_text is None:
+        if fm_text is None or match is None:
             sys.exit(f"{rel(path)}: no YAML frontmatter block — fix by hand first")
         if re.search(r"^metadata:", fm_text, re.M):
             if re.search(r"^  version: ", fm_text, re.M):
