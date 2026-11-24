@@ -11,7 +11,7 @@ description: >-
   (calls `submitToClaude`) so the verdict and marked regions reach Claude Code automatically.
 license: MIT
 metadata:
-  version: "1.6.0"
+  version: "1.7.0"
 ---
 
 # HTML Image Review
@@ -124,7 +124,7 @@ These defaults apply to every artifact this skill produces. A rule above wins on
 - **Images stay local.** Embed images as base64 data URIs while the page's total image payload is ≤ ~1.5 MB (the artifact travels as one file); above that, reference local files with relative paths (`src="images/a.png"`) and tell the user to keep the folder together. Never fetch remote images. Data-URI and same-folder images do not taint the canvas, so canvas export (`toDataURL`) keeps working; a cross-origin `<img>` taints it and breaks export.
 - **Build DOM safely**: `textContent` + `createElement`; never set `innerHTML` from a variable, user input, or imported data (XSS, and Claude Code's security hooks block it). Static literal markup is fine.
 - **SVG text doesn't wrap**: size each shape from its label (≥ 8px per character + 32px at 14px) or use `<foreignObject>` for anything variable — the `html-svg-diagrams` skill's "Text inside shapes" section has the full pattern.
-- **Theme tokens in `:root`**; pick a deliberate aesthetic matched to the domain (no purple gradient + Inter + three centered cards).
+- **Theme tokens in `:root`, in a light and a dark set that follow the viewer's color scheme**; pick a deliberate aesthetic matched to the domain (no purple gradient + Inter + three centered cards). Declare `color-scheme: light dark` on `:root`, put the light values in `:root` and override every color token inside `@media (prefers-color-scheme: dark) { :root { … } }`, and keep WCAG AA in both sets. Everything colored reads the tokens — inline SVG `fill`/`stroke` via `var(--…)` or `currentColor`, canvas drawing from `getComputedStyle` (redraw on the media query's `change` event) — never hard-coded hex that only works on one background. A dark-first aesthetic (e.g. an "engineering" look) makes dark its primary but still ships the light set. A manual theme toggle, where a skill asks for one, defaults to the OS scheme and overrides it via an attribute on `<html>`. Colors that are the content itself (palette swatches, images, a design system's own light/dark previews) stay fixed. `@media print` forces the light tokens, so a dark-mode print isn't light text on white paper.
 - **Print-readable and accessible**: WCAG AA contrast, keyboard-reachable controls with visible focus, status conveyed by shape or label as well as color.
 - **Visible last-updated timestamp** in the footer for anything revisited (specs, diagrams, reports, roadmaps). One-shot editors can skip it.
 - **Clipboard writes go through the shared helper.** Inline `${CLAUDE_PLUGIN_ROOT}/assets/submit-handler.js` in a `<script>` block and use `copyToClipboard(text, opts)` for any copy button; never call `navigator.clipboard.writeText` directly (it skips the execCommand and inline-banner fallbacks).

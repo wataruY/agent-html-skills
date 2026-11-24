@@ -3,6 +3,20 @@
 All notable changes to the `html-skills` plugin are documented here.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.7.0] — 2026-11-24
+
+### Added
+
+- **Foundation rule: artifacts follow the viewer's color scheme.** The shared HTML output
+  foundation's theme-token rule now requires a light and a dark token set: `color-scheme:
+  light dark` on `:root`, light values in `:root`, every color token overridden in
+  `@media (prefers-color-scheme: dark)`, WCAG AA in both. SVG and canvas colors read the
+  tokens instead of hard-coded hex (canvas redraws on the scheme change); dark-first
+  aesthetics still ship a light set; a manual toggle defaults to the OS scheme; colors that
+  are the content (swatches, images, a design system's own theme previews) stay fixed; and
+  `@media print` forces the light tokens so a dark-mode print stays readable. Synced into
+  all 18 content skills from `assets/blocks/foundation.md`.
+
 ## [1.6.0] — 2026-11-24
 
 ### Fixed
