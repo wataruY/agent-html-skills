@@ -13,7 +13,7 @@ when_to_use: >-
   not implementation.
 license: MIT
 metadata:
-  version: "1.7.0"
+  version: "1.8.0"
 ---
 
 # HTML Research, Reports & Learning

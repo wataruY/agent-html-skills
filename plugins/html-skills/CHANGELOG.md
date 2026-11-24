@@ -3,6 +3,20 @@
 All notable changes to the `html-skills` plugin are documented here.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.8.0] — 2026-11-24
+
+### Fixed
+
+- **Submit is a button click, never a form submit.** The shared submit block now requires
+  the Submit control to be a `<button type="button">` whose `click` handler reads state
+  directly, and forbids a `<form>` `submit` event / `requestSubmit()`. bb's chat file preview
+  serves HTML with CSP `sandbox allow-scripts` (no `allow-forms`), where Chrome blocks form
+  submission before any handler runs ("Blocked form submission … 'allow-forms' permission is
+  not set"): no request, no toast, no notification. This was the root cause of Submits never
+  arriving from bb-opened artifacts. Synced into all interactive skills; the README's
+  *When a Submit never arrives* table and the listen skill's troubleshooting note gained the
+  matching symptom.
+
 ## [1.7.0] — 2026-11-24
 
 ### Added

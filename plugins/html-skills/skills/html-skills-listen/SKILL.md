@@ -9,7 +9,7 @@ description: >-
 license: MIT
 user-invocable: false
 metadata:
-  version: "1.7.0"
+  version: "1.8.0"
 ---
 
 # html-skills-listen — server-mode setup for html-skills artifacts
@@ -69,7 +69,7 @@ System primitive for the html-skills plugin. It runs a bundled script that detec
 
 ## When a Submit doesn't arrive
 
-The receiver logs one line per request to `LOG` (`request <METHOD> <path> … -> <status> <reason>`; never the query string or body, and never matching the `Monitor` filter). Read it with `grep ' request ' <LOG>`: no lines means the browser never sent the request (blocked by a Local Network Access prompt, or the page is open on another device); a `preflight` line with no POST means the browser refused after the preflight; `403` means the artifact's submit URL is stale — regenerate it.
+The receiver logs one line per request to `LOG` (`request <METHOD> <path> … -> <status> <reason>`; never the query string or body, and never matching the `Monitor` filter). Read it with `grep ' request ' <LOG>`: no lines means the browser never sent the request (a Submit wired to a `<form>` submit inside a sandboxed preview — console: "Blocked form submission" — or blocked by a Local Network Access prompt, or the page is open on another device); a `preflight` line with no POST means the browser refused after the preflight; `403` means the artifact's submit URL is stale — regenerate it.
 
 ## Handling submissions (security)
 

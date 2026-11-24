@@ -92,6 +92,7 @@ The receiver writes one diagnostic line per request to the same log, never match
 
 | Log shows | Meaning |
 |---|---|
+| nothing after `listening on`, console says *Blocked form submission … 'allow-forms' permission is not set* | Submit is wired to a `<form>` submit event and the page is in a sandboxed preview (bb's chat file preview: CSP `sandbox allow-scripts`). The handler never ran, so there is no toast either. Use a `<button type="button">` click handler. |
 | nothing after `listening on` | The browser never sent the request: it was blocked before the network (a declined Chrome/Firefox *Local Network Access* prompt, an embedding frame without loopback permission), or the page is open on a different device than the receiver (`127.0.0.1` is that device). |
 | `request OPTIONS … -> 204 preflight` with no POST after it | The browser received the preflight answer and still refused the POST — check the console for a CORS or Local Network Access message. |
 | `request POST … -> 403 invalid handshake` / `missing handshake` | The artifact carries a stale or stripped submit URL (e.g. generated before a receiver restart on a new port). Regenerate it. |
